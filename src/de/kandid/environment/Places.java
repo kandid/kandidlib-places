@@ -172,6 +172,9 @@ public abstract class Places {
 		private final File _cacheBase = new File(System.getProperty("user.home") + "/Library/Caches");
 	}
 
+	Places() {
+	}
+
 	/**
 	 * Retreive all directories where config files can be found. They are sorted descending
 	 * by relevance. At least the first one can also be used to write config files.<p/>
