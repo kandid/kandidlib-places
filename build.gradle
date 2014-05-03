@@ -2,11 +2,12 @@ apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
 apply plugin: 'maven'
+apply plugin: 'signing'
 
 sourceCompatibility = 1.7
-version = '0.4.0'
+version = '0.1.0'
 group = 'de.kandid'
-def theName = 'kandidlib'
+def theName = 'kandidlib-places'
 
 buildDir = hasProperty('build.dir.root') ? file(getProperty('build.dir.root') + '/' + project.name) : buildDir
 
@@ -19,14 +20,11 @@ repositories {
 
 sourceSets {
 	main {java {srcDir 'src'} resources {srcDir 'src'}}
-	test {java {srcDir 'test'} resources {srcDir 'test'}}
-	demo {java {srcDir 'demo'}}
+//	test {java {srcDir 'test'} resources {srcDir 'test'}}
 }
 
 dependencies {
-    compile group: 'de.kandid', name: 'kandidlib-emitter', version: '0.4.1'
-	 compile group: 'com.jgoodies', name: 'jgoodies-forms', version: '1.7.2'
-    testCompile group: 'de.kandid', name: 'kandidlib-junit', version: '0.4.0'
+//    testCompile group: 'de.kandid', name: 'kandidlib-junit', version: '0.4.0'
 }
 
 jar {baseName = theName}
@@ -36,7 +34,42 @@ task sourcesJar(type: Jar, dependsOn: classes) {
 	from sourceSets.main.allSource
 }
 
+task javadocJar(type: Jar, dependsOn: javadoc) {
+	baseName = theName
+	classifier = 'javadoc'
+	from new File(buildDir, 'docs/javadoc')
+}
+
+signing {sign configurations.archives}
+
+uploadArchives {	repositories { mavenDeployer {
+	beforeDeployment {deployment -> signing.signPom(deployment)}
+	repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+		authentication(userName: sonatypeUsername, password: sonatypePassword)
+	}
+	pom.project {
+		name theName
+		packaging 'jar'
+		description 'Type safe model/listener pattern through class generation'
+		url 'https://github.com/kandid/' + theName
+		scm {
+			def gitUrl = 'scm:git@github.com:kandid/' + theName
+			url gitUrl; connection gitUrl; developerConnection gitUrl;
+		}
+		licenses { license {
+				 name 'The Apache Software License, Version 2.0'
+				 url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+				 distribution 'repo'
+		}}
+		developers {
+			developer {id 'kandid'; name 'Dominikus Diesch';}
+		}
+	}
+}}}
+
+
 artifacts {
 	archives jar
 	archives sourcesJar
+	archives javadocJar
 }
