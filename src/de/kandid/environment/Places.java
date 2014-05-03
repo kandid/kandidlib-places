@@ -21,11 +21,32 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
- * http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
+ * Locate standard directories in an OS specific manner.<p/>
+ *
+ * <ul><li>
+ * On Unix systems it follows the
+ * <a href="http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html">
+ * XDG Base Directory Specification</a>
+ * </li><li>
+ * On Windows it follows the rules of
+ * <a href="http://www.microsoft.com/security/portal/mmpc/shared/variables.aspx">
+ * Common folder variables</a>
+ * </li><li>
+ * On Mac OS X it follows the rules of
+ * <a href="http://developer.apple.com/library/mac/#qa/qa2001/qa1170.html">
+ * Important Java Directories on Mac OS X</a>
+ * </li></ul>
+ * For unknown systems the library chooses the XDG convention and spits out a
+ * warning on the Logger. The OS will be determined on behalf of
+ * {@code System.getProperty("os.name")} but since there is no exhaustive list, I
+ * can't foresee all possible returned strings. So expect some inaccuracies and
+ * drop me a note on <a href="https://github.com/kandid/kandidlib-places/issues">github</a>
+ * when you found one.
  */
+
 public abstract class Places {
 
-	private static class XDG extends Places {
+	static class XDG extends Places {
 
 		public XDG() {
 		}
@@ -75,9 +96,9 @@ public abstract class Places {
 		private final File _runtimeBase = new File(getenv("XDG_RUNTIME_DIR", System.getProperty("java.io.tmpdir")));
 	}
 
-	private static class Windows extends Places {
+	static class Windows extends Places {
 
-		private static class Vista extends Windows {
+		static class Vista extends Windows {
 			Vista() {
 				super (new File[] {
 						new File(getenv("APPDATA", "AppData\\Roaming")),
@@ -87,7 +108,7 @@ public abstract class Places {
 			}
 		}
 
-		private static class XP extends Windows {
+		static class XP extends Windows {
 			XP() {
 				super (new File[] {
 						new File(getenv("APPDATA", "AppData")),
@@ -123,7 +144,7 @@ public abstract class Places {
 		private final File[] _dirs;
 	}
 
-	private static class MacOS extends Places {
+	static class MacOS extends Places {
 
 		@Override
 		public File[] getConfigBases() {
@@ -153,38 +174,95 @@ public abstract class Places {
 
 	/**
 	 * Retreive all directories where config files can be found. They are sorted descending
-	 * by relevance. At least the first one can also be used to write config files.
-	 * If not, it is an err
-	 * @return
+	 * by relevance. At least the first one can also be used to write config files.<p/>
+	 * <em>Note</em>: these directories are <em>not</em> application specific. If you want
+	 * an application specific directory, use {@link #getConfigRead(String)}<p/>
+	 * The returned array must have at least one entry - the users preferred place.
+	 * @return an array of all directories where config files can be found
 	 */
 	public abstract File[] getConfigBases();
 
+	/**
+	 * Retreive all directories where data files can be found. They are sorted descending
+	 * by relevance. At least the first one can also be used to write data files.<p/>
+	 * <em>Note</em>: these directories are <em>not</em> application specific. If you want
+	 * an application specific directory, use {@link #getDataRead(String)}<p/>
+	 * The returned array must have at least one entry - the users preferred place.
+	 * @return an array of all directories where data files can be found
+	 */
 	public abstract File[] getDataBases();
 
+	/**
+	 * Retrieve the directory relative to which user specific non-essential data files should
+	 * be stored.<p/>
+	 * <em>Note</em>: this directory is <em>not</em> application specific. If you want
+	 * an application specific directory, use {@link #getCacheDir(String)}
+	 * @return the directory for non-essential data files; not allowed to be {@code null}
+	 */
 	public abstract File getCacheBase();
 
+	/**
+	 * Retrieve the directory relative to which user-specific non-essential runtime files and
+	 * other file objects (such as sockets, named pipes, ...) should be stored.<p/>
+	 * <em>Note</em>: this directory is <em>not</em> application specific. If you want
+	 * an application specific directory, use {@link #getRuntimeDir(String)}
+	 * @return the directory for non-essential data files; may be {@code null}
+	 */
 	public abstract File getRuntimeBase();
 
+	/**
+	 * Get a preference-ordered list of all application specific directories to search for
+	 * config files. The list uses {@link #getConfigBases()} and appends the application name.
+	 * @param applicationName	the name of the application
+	 * @return an application specific list of config directories
+	 */
 	public File[] getConfigRead(String applicationName) {
 		return appendToBases(getConfigBases(), applicationName);
 	}
 
+	/**
+	 * Get the application specific directory where to write config files.
+	 * @param applicationName the name of the application
+	 * @return the application specific directory where to write config files
+	 */
 	public File getConfigWrite(String applicationName) {
 		return createUserDir(getConfigBases()[0], applicationName);
 	}
 
+	/**
+	 * Get a preference-ordered list of all application specific directories to search for
+	 * data files. The list uses {@link #getDataBases()} and appends the application name.
+	 * @param applicationName	the name of the application
+	 * @return an application specific list of data directories
+	 */
 	public File[] getDataRead(String applicationName) {
 		return  appendToBases(getDataBases(), applicationName);
 	}
 
+	/**
+	 * Get the application specific directory where to write data files.
+	 * @param applicationName the name of the application
+	 * @return the application specific directory where to write data files
+	 */
 	public File getDataWrite(String applicationName) {
 		return createUserDir(getDataBases()[0], applicationName);
 	}
 
+	/**
+	 * Get the application specific directory where to read and write non-essential files.
+	 * @param applicationName the name of the application
+	 * @return the application specific directory where to read and write non-essential files
+	 */
 	public File getCacheDir(String applicationName) {
 		return createUserDir(getCacheBase(), applicationName);
 	}
 
+	/**
+	 * Get the application specific the directory relative to which user-specific non-essential
+	 * runtime files and other file objects (such as sockets, named pipes, ...) should be stored.
+	 * @param applicationName the name of the application
+	 * @return the application specific directory where to read and write non-essential files
+	 */
 	public File getRuntimeDir(String applicationName) {
 		return createUserDir(getRuntimeBase(), applicationName);
 	}
@@ -228,6 +306,10 @@ public abstract class Places {
 		return System.getProperty("user.home") + File.separator + def;
 	}
 
+	/**
+	 * Returns the singleton
+	 * @return the instance of this class
+	 */
 	public static Places get() {
 		return Holder._instance;
 	}
