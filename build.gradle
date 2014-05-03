@@ -1,0 +1,42 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+apply plugin: 'maven'
+
+sourceCompatibility = 1.7
+version = '0.4.0'
+group = 'de.kandid'
+def theName = 'kandidlib'
+
+buildDir = hasProperty('build.dir.root') ? file(getProperty('build.dir.root') + '/' + project.name) : buildDir
+
+eclipse {classpath {defaultOutputDir = new File(buildDir, 'eclipse/classes')}}
+
+repositories {
+	 mavenLocal()
+    mavenCentral()
+}
+
+sourceSets {
+	main {java {srcDir 'src'} resources {srcDir 'src'}}
+	test {java {srcDir 'test'} resources {srcDir 'test'}}
+	demo {java {srcDir 'demo'}}
+}
+
+dependencies {
+    compile group: 'de.kandid', name: 'kandidlib-emitter', version: '0.4.1'
+	 compile group: 'com.jgoodies', name: 'jgoodies-forms', version: '1.7.2'
+    testCompile group: 'de.kandid', name: 'kandidlib-junit', version: '0.4.0'
+}
+
+jar {baseName = theName}
+task sourcesJar(type: Jar, dependsOn: classes) {
+	baseName = theName
+	classifier = 'sources'
+	from sourceSets.main.allSource
+}
+
+artifacts {
+	archives jar
+	archives sourcesJar
+}
