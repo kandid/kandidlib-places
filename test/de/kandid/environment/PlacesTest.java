@@ -53,9 +53,8 @@ public class PlacesTest extends TestCase {
 	}
 
 	public void testIdentification() throws IOException {
-		for (TestParameter e : makePlaces()) {
+		for (TestParameter e : makePlaces())
 			assertEquals(e._class, e._places.getClass());
-		}
 	}
 
 	public void testConfigRead() throws IOException {
@@ -135,6 +134,7 @@ public class PlacesTest extends TestCase {
 				"TEMP", "$h/tmp"
 		));
 		ret.add(new TestParameter("Mac OS X", Places.MacOS.class));
+		ret.add(new TestParameter("Unknown OS", Places.XDG.class));
 		return ret;
 	}
 }
