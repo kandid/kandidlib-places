@@ -19,12 +19,12 @@ repositories {
 }
 
 sourceSets {
-	main {java {srcDir 'src'} resources {srcDir 'src'}}
-//	test {java {srcDir 'test'} resources {srcDir 'test'}}
+	main {java {srcDir 'src'}}
+	test {java {srcDir 'test'}}
 }
 
 dependencies {
-//    testCompile group: 'de.kandid', name: 'kandidlib-junit', version: '0.4.0'
+	testCompile group: 'de.kandid', name: 'kandidlib-junit', version: '0.4.0'
 }
 
 jar {baseName = theName}

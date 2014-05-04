@@ -46,9 +46,26 @@ import java.util.logging.Logger;
 
 public abstract class Places {
 
-	static class XDG extends Places {
+	public static class SystemParameter {
+		String getenv(String name) {
+			return System.getenv(name);
+		}
+		String getprop(String name) {
+			return System.getProperty(name);
+		}
 
-		public XDG() {
+		String getenv(String name, String def) {
+			String ret = getenv(name);
+			if (ret != null && ret.length() > 0)
+				return ret;
+			return getprop("user.home") + File.separator + def;
+		}
+	}
+
+	public static class XDG extends Places {
+
+		public XDG(SystemParameter env) {
+			super(env);
 		}
 
 		@Override
@@ -71,12 +88,12 @@ public abstract class Places {
 			return _runtimeBase;
 		}
 
-		private static File[] possibilities(String type, String defPath) {
+		private File[] possibilities(String type, String defPath) {
 			ArrayList<File> ret = new ArrayList<>();
-			String home = System.getenv("XDG_" + type + "_HOME");
+			String home = _env.getenv("XDG_" + type + "_HOME", null);
 			if (home != null && home.length() > 0)
 				ret.add(new File(home));
-			String dirs = System.getenv("XDG_" + type + "_DIRS");
+			String dirs = _env.getenv("XDG_" + type + "_DIRS", null);
 			dirs = dirs == null || dirs.length() == 0 ? defPath : dirs;
 			if (dirs != null && dirs.length() > 0) {
 				for (String dir : dirs.split(File.pathSeparator)) {
@@ -86,38 +103,39 @@ public abstract class Places {
 				}
 			}
 			if (ret.size() == 0)
-				ret.add(new File(System.getProperty("user.home"), "." + type.toLowerCase()));
+				ret.add(new File(_env.getprop("user.home"), "." + type.toLowerCase()));
 			return ret.toArray(new File[ret.size()]);
 		}
 
 		private final File[] _configBases = possibilities("CONFIG", "/etc/xdg");
 		private final File[] _dataBases = possibilities("DATA", "/usr/local/share/:/usr/share/");
-		private final File _cacheBase = new File(getenv("XDG_CACHE_HOME", ".cache"));
-		private final File _runtimeBase = new File(getenv("XDG_RUNTIME_DIR", System.getProperty("java.io.tmpdir")));
+		private final File _cacheBase = new File(_env.getenv("XDG_CACHE_HOME", ".cache"));
+		private final File _runtimeBase = new File(_env.getenv("XDG_RUNTIME_DIR", _env.getprop("java.io.tmpdir")));
 	}
 
-	static class Windows extends Places {
+	public static class Windows extends Places {
 
-		static class Vista extends Windows {
-			Vista() {
-				super (new File[] {
-						new File(getenv("APPDATA", "AppData\\Roaming")),
-						new File(getenv("LOCALAPPDATA", "AppData")),
-						new File(getenv("PROGRAMDATA", "C:\\Program Files"))
+		public static class Vista extends Windows {
+			Vista(SystemParameter env) {
+				super (env, new File[] {
+						new File(env.getenv("APPDATA", "AppData\\Roaming")),
+						new File(env.getenv("LOCALAPPDATA", "AppData")),
+						new File(env.getenv("PROGRAMDATA", "C:\\Program Files"))
 				});
 			}
 		}
 
-		static class XP extends Windows {
-			XP() {
-				super (new File[] {
-						new File(getenv("APPDATA", "AppData")),
-						new File(getenv("PROGRAMFILES", "C:\\Program Files"))
+		public static class XP extends Windows {
+			XP(SystemParameter env) {
+				super (env, new File[] {
+						new File(env.getenv("APPDATA", "AppData")),
+						new File(env.getenv("PROGRAMFILES", "C:\\Program Files"))
 				});
 			}
 		}
 
-		Windows(File[] dirs) {
+		public Windows(SystemParameter env, File[] dirs) {
+			super(env);
 			_dirs = dirs;
 		}
 
@@ -133,7 +151,7 @@ public abstract class Places {
 
 		@Override
 		public File getCacheBase() {
-			return new File(System.getenv("TEMP"));
+			return new File(_env.getenv("TEMP"));
 		}
 
 		@Override
@@ -144,7 +162,11 @@ public abstract class Places {
 		private final File[] _dirs;
 	}
 
-	static class MacOS extends Places {
+	public static class MacOS extends Places {
+
+		public MacOS(SystemParameter env) {
+			super(env);
+		}
 
 		@Override
 		public File[] getConfigBases() {
@@ -167,12 +189,13 @@ public abstract class Places {
 			return null;
 		}
 
-		private final File[] _configBases = new File[]{new File(System.getProperty("user.home") + "/Library/Preferences")};
-		private final File[] _dataBases = new File[]{new File(System.getProperty("user.home") + "/Library")};
-		private final File _cacheBase = new File(System.getProperty("user.home") + "/Library/Caches");
+		private final File[] _configBases = new File[]{new File(_env.getprop("user.home") + "/Library/Preferences")};
+		private final File[] _dataBases = new File[]{new File(_env.getprop("user.home") + "/Library")};
+		private final File _cacheBase = new File(_env.getprop("user.home") + "/Library/Caches");
 	}
 
-	Places() {
+	public Places(SystemParameter env) {
+		_env = env;
 	}
 
 	/**
@@ -263,11 +286,23 @@ public abstract class Places {
 	/**
 	 * Get the application specific the directory relative to which user-specific non-essential
 	 * runtime files and other file objects (such as sockets, named pipes, ...) should be stored.
+	 * This directory is guaranteed to be cleared between system restarts.<p/>
+	 * Since not all operating systems support a place fulfilling the last requirement, this
+	 * method may return {@code null} when strict is {@code true}. If {@code strict} is 
+	 * {@code false}, this method returns never returns {@code null} but always a directory 
+	 * that is as close as possible. 
 	 * @param applicationName the name of the application
+	 * @param strict detrmines whether to be strict at the requirements
 	 * @return the application specific directory where to read and write non-essential files
 	 */
-	public File getRuntimeDir(String applicationName) {
-		return createUserDir(getRuntimeBase(), applicationName);
+	public File getRuntimeDir(String applicationName, boolean strict) {
+		File base = getRuntimeBase();
+		if (base == null) {
+			if (strict)
+				return null;
+			base = getCacheBase();
+		}
+		return createUserDir(base, applicationName);
 	}
 
 	private static File createUserDir(File file, String applicationName) {
@@ -285,28 +320,25 @@ public abstract class Places {
 
 	private static class Holder {
 		static {
-			String osName = System.getProperty("os.name");
-			if (osName.startsWith("Linux") || osName.startsWith("FreeBSD") || osName.startsWith("SunOS"))
-				_instance = new XDG();
-			else if ("Windows XP".equals(osName) || "Windows 2000".equals(osName) || "Windows NT".equals(osName))
-				_instance = new Windows.XP();
-			else if (osName.startsWith("Windows"))
-				_instance = new Windows.Vista();
-			else if ("Mac OS X".equals(osName))
-				_instance = new MacOS();
-			else {
-				Logger.getGlobal().warning("While initializing de.kandid.environment.Places: Unknown OS: " + osName);
-				_instance = new XDG();
-			}
+			_instance = forEnvironment(new SystemParameter());
 		}
 		private static final Places _instance;
 	}
 
-	private static String getenv(String name, String def) {
-		String ret = System.getenv(name);
-		if (ret != null && ret.length() > 0)
-			return ret;
-		return System.getProperty("user.home") + File.separator + def;
+	public static Places forEnvironment(SystemParameter env) {
+		String osName = env.getprop("os.name");
+		if (osName.startsWith("Linux") || osName.startsWith("FreeBSD") || osName.startsWith("SunOS"))
+			return new XDG(env);
+		else if ("Windows XP".equals(osName) || "Windows 2000".equals(osName) || "Windows NT".equals(osName))
+			return new Windows.XP(env);
+		else if (osName.startsWith("Windows"))
+			return new Windows.Vista(env);
+		else if ("Mac OS X".equals(osName))
+			return new MacOS(env);
+		else {
+			Logger.getGlobal().warning("While initializing de.kandid.environment.Places: Unknown OS: " + osName);
+			return new XDG(env);
+		}
 	}
 
 	/**
@@ -316,4 +348,6 @@ public abstract class Places {
 	public static Places get() {
 		return Holder._instance;
 	}
+
+	final SystemParameter _env;
 }
