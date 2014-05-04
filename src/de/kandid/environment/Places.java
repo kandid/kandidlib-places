@@ -231,7 +231,7 @@ public abstract class Places {
 	 * Retrieve the directory relative to which user-specific non-essential runtime files and
 	 * other file objects (such as sockets, named pipes, ...) should be stored.<p/>
 	 * <em>Note</em>: this directory is <em>not</em> application specific. If you want
-	 * an application specific directory, use {@link #getRuntimeDir(String)}
+	 * an application specific directory, use {@link #getRuntimeDir(String,boolean)}
 	 * @return the directory for non-essential data files; may be {@code null}
 	 */
 	public abstract File getRuntimeBase();
@@ -288,9 +288,9 @@ public abstract class Places {
 	 * runtime files and other file objects (such as sockets, named pipes, ...) should be stored.
 	 * This directory is guaranteed to be cleared between system restarts.<p/>
 	 * Since not all operating systems support a place fulfilling the last requirement, this
-	 * method may return {@code null} when strict is {@code true}. If {@code strict} is 
-	 * {@code false}, this method returns never returns {@code null} but always a directory 
-	 * that is as close as possible. 
+	 * method may return {@code null} when strict is {@code true}. If {@code strict} is
+	 * {@code false}, this method returns never returns {@code null} but always a directory
+	 * that is as close as possible.
 	 * @param applicationName the name of the application
 	 * @param strict detrmines whether to be strict at the requirements
 	 * @return the application specific directory where to read and write non-essential files
