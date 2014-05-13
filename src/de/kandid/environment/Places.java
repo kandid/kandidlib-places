@@ -335,8 +335,8 @@ public abstract class Places {
 			return new Windows.Vista(env);
 		else if ("Mac OS X".equals(osName))
 			return new MacOS(env);
-			Logger.getLogger(Places.class.getName()).warning("Unknown OS: " + osName);
-			return new XDG(env);
+		Logger.getLogger(Places.class.getName()).warning("Unknown OS: " + osName);
+		return new XDG(env);
 	}
 
 	/**
