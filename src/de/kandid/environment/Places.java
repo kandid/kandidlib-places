@@ -335,10 +335,8 @@ public abstract class Places {
 			return new Windows.Vista(env);
 		else if ("Mac OS X".equals(osName))
 			return new MacOS(env);
-		else {
-			Logger.getGlobal().warning("While initializing de.kandid.environment.Places: Unknown OS: " + osName);
+			Logger.getLogger(Places.class.getName()).warning("Unknown OS: " + osName);
 			return new XDG(env);
-		}
 	}
 
 	/**
