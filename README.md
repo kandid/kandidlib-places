@@ -29,6 +29,6 @@ gradle jar
 ```
 produces the jar.
 
-Improving kandidlib-junit
+Improving kandidlib-places
 -------------
-Of course any IDE may be used to work on kandidlib-emitter but support for gradle makes it more convenient.
+Of course any IDE may be used to work on kandidlib-places but support for gradle makes it more convenient.
