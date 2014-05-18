@@ -43,6 +43,8 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 signing {sign configurations.archives}
 
 uploadArchives {	repositories { mavenDeployer {
+	if (!hasProperty('sonatypeUsername'))
+		return
 	beforeDeployment {deployment -> signing.signPom(deployment)}
 	repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
 		authentication(userName: sonatypeUsername, password: sonatypePassword)

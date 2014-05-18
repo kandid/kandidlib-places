@@ -1,4 +1,1 @@
 language: java
-before_script:
-   - echo "sonatypeUsername=foo" >> local.properties
-   - echo "sonatypePassword=bar" >> local.properties
