@@ -40,7 +40,8 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 	from new File(buildDir, 'docs/javadoc')
 }
 
-signing {sign configurations.archives}
+if (hasProperty('signing.keyId'))
+	signing {sign configurations.archives}
 
 uploadArchives {	repositories { mavenDeployer {
 	if (!hasProperty('sonatypeUsername'))
