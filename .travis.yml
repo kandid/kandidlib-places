@@ -1,4 +1,4 @@
 language: java
 before_script:
-	- echo "sonatypeUserName=foo" >> gradle.properties
-	- echo "sonatypePassword=bar" >> gradle.properties
+   - echo "sonatypeUserName=foo" >> gradle.properties
+   - echo "sonatypePassword=bar" >> gradle.properties
